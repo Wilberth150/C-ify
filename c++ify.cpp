@@ -5,6 +5,9 @@
 #include <fstream>
 #include <cstdlib>
 #include <ctime>
+#include <windows.h>
+#include <mmsystem.h>
+#pragma comment(lib, "winmm.lib")
 
 using namespace std;
 
