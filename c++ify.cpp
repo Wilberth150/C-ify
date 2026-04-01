@@ -1,5 +1,3 @@
-//pvto el que lo lea 
-
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -7,242 +5,184 @@
 #include <ctime>
 #include <windows.h>
 #include <mmsystem.h>
-#pragma comment(lib, "winmm.lib")
 
 using namespace std;
 
 struct Cancion {
     string titulo;
-    string artista;
+    string artist;
     string archivoLetra;
+    string archivoMusica;
     bool favorito;
     Cancion *sig;
     Cancion *ant;
 };
 
 // ======================================================
-// BLOQUE A: ESTRUCTURAS DE DATOS (PROGRAMADOR A)
-// No tocar si eres el Programador B
+// BLOQUE A: ESTRUCTURA CIRCULAR (Memoria Dinámica)
 // ======================================================
 
-void agregarCancion(Cancion* &p, Cancion* &f, string t, string a, string al) {
-  Cancion* nuevo = new Cancion;
+void agregarCancion(Cancion* &p, Cancion* &f, string t, string a, string al, string am) {
+    Cancion* nuevo = new Cancion;
     nuevo->titulo = t;
-    nuevo->artista = a;
+    nuevo->artist = a;
     nuevo->archivoLetra = al;
-
+    nuevo->archivoMusica = am;
+    nuevo->favorito = false;
+    
     if (p == NULL) {
         p = f = nuevo;
-        nuevo->sig = nuevo;  
-        nuevo->ant = nuevo;
-    } 
-    else {
-        
-        nuevo->sig = p;      
-        nuevo->ant = f;      
-        f->sig = nuevo;      
-        p->ant = nuevo;      
-        f = nuevo;           
+        nuevo->sig = nuevo->ant = nuevo;
+    } else {
+        nuevo->sig = p;
+        nuevo->ant = f;
+        f->sig = nuevo;
+        p->ant = nuevo;
+        f = nuevo;
     }
 }
 
-void eliminarCancion(Cancion* &p, Cancion* &f, string titulo) {
-    if (p == NULL) {
-        cout << "La lista está vacía.\n";
-        return;
+void eliminarActual(Cancion* &actual, Cancion* &p, Cancion* &f) {
+    if (!actual) return;
+    Cancion* eliminar = actual;
+    
+    if (actual->sig == actual) { // Solo queda una canción en la lista
+        p = f = actual = NULL;
+    } else {
+        actual->ant->sig = actual->sig;
+        actual->sig->ant = actual->ant;
+        if (actual == p) p = actual->sig;
+        if (actual == f) f = actual->ant;
+        actual = actual->sig; // Mover al siguiente tras borrar
     }
-
-    Cancion* aux = p;
-
-    do {
-        if (aux->titulo == titulo) {
-
-            
-            if (p == f) {
-                delete aux;
-                p = f = NULL;
-            }
-            
-            else if (aux == p) {
-                p = p->sig;
-                p->ant = f;
-                f->sig = p;
-                delete aux;
-            }
-           
-            else if (aux == f) {
-                f = f->ant;
-                f->sig = p;
-                p->ant = f;
-                delete aux;
-            }
-            
-            else {
-                aux->ant->sig = aux->sig;
-                aux->sig->ant = aux->ant;
-                delete aux;
-            }
-
-            cout << "Canción eliminada correctamente.\n";
-            return;
-        }
-
-        aux = aux->sig;
-
-    } while (aux != p);
-
-    cout << "Canción no encontrada.\n";
+    delete eliminar; // Liberación explícita de memoria
+    PlaySound(NULL, 0, 0); 
+    cout << "\n[!] Cancion eliminada de tu biblioteca.\n";
 }
 
-void buscarXArtista(Cancion* p, string artista) {
-   if (p == NULL) {
-        cout << "No hay canciones registradas.\n";
-        return;
-    }
-
+void irAPosicion(Cancion* &actual, Cancion* p, int posicion) {
+    if (!p) return;
     Cancion* aux = p;
-    bool encontrado = false;
-
+    int cont = 1;
+    
     do {
-        if (aux->artista == artista) {
-            cout << "Título: " << aux->titulo << endl;
-            cout << "Artista: " << aux->artista << endl;
-            cout << "Archivo de letra: " << aux->archivoLetra << endl;
-            cout << "-----------------------------\n";
-            encontrado = true;
-        }
-        aux = aux->sig;
-    } while (aux != p);
-
-    if (!encontrado) {
-        cout << "No se encontraron canciones de ese artista.\n";
-    }
-}
-void agregarAFavoritos(Cancion* p, string titulo) {
-    if (p == NULL) {
-        cout << "No hay canciones registradas.\n";
-        return;
-    }
-
-    Cancion* aux = p;
-
-    do {
-        if (aux->titulo == titulo) {
-            aux->favorito = true;
-            cout << "La canción '" << titulo << "' fue agregada a favoritos.\n";
+        if (cont == posicion) {
+            actual = aux;
             return;
         }
         aux = aux->sig;
+        cont++;
     } while (aux != p);
-
-    cout << "Canción no encontrada.\n";
-}
-void mostrarFavoritos(Cancion* p) {
-    if (p == NULL) {
-        cout << "No hay canciones.\n";
-        return;
-    }
-
-    Cancion* aux = p;
-    bool hayFavoritos = false;
-
-    do {
-        if (aux->favorito) {
-            cout << "🎵 " << aux->titulo 
-                 << " - " << aux->artista << endl;
-            hayFavoritos = true;
-        }
-        aux = aux->sig;
-    } while (aux != p);
-
-    if (!hayFavoritos) {
-        cout << "No hay canciones favoritas.\n";
-    }
+    
+    cout << "\n[!] Posicion fuera de rango.\n";
 }
 
 // ======================================================
-// BLOQUE B: INTERFAZ Y ARCHIVOS (PROGRAMADOR B)
-// No tocar si eres el Programador A
+// BLOQUE B: LÓGICA DE INTERFAZ E I/O
 // ======================================================
 
-void sistemaLogin() {
-    // TAREA B: 3 intentos de login aqui.
+bool login() {
+    string u, pas;
+    for(int i = 1; i <= 3; i++) {
+        cout << "\n[C++IFY LOGIN - Intento " << i << "/3]\nUser: "; cin >> u;
+        cout << "Pass: "; cin >> pas;
+        if(u == "admin" && pas == "1234") return true;
+        cout << "Acceso denegado. Intentalo de nuevo.\n";
+    }
+    return false;
 }
 
 void mostrarLetra(string archivo) {
-    // TAREA B: ifstream para leer el .txt
+    ifstream f(archivo.c_str()); 
+    string l;
+    if(f.is_open()){
+        cout << "\n--- LYRICS (LETRA) ---\n";
+        while(getline(f, l)) cout << l << endl;
+        f.close();
+    } else cout << "[!] No se encontro el archivo .txt de la letra.\n";
 }
 
-void menuSpotify(Cancion* &p, Cancion* &f) {
-    // TAREA B: El switch case con las opciones del pizarron.
+void reproducir(Cancion* actual) {
+    if(!actual) {
+        cout << "\n[!] La biblioteca esta vacia.\n";
+        return;
+    }
+    PlaySound(NULL, 0, 0); // Detener audio anterior
+    cout << "\n>>> REPRODUCIENDO: " << actual->titulo << " - " << actual->artist << " <<<\n";
+    mostrarLetra(actual->archivoLetra); 
+    PlaySound(actual->archivoMusica.c_str(), NULL, SND_FILENAME | SND_ASYNC);
 }
 
 // ======================================================
-// UNIÓN DE CÓDIGO (EL PUNTO DE ENCUENTRO)
+// MAIN
 // ======================================================
+
 int main() {
+    srand(time(NULL));
+    if(!login()) {
+        cout << "\nSistema bloqueado. Adios.\n";
+        return 0;
+    }
+
     Cancion *p = NULL, *f = NULL;
-    int opcion;
-    string titulo, artista, archivo;
+    
+    // CARGA DE DATOS 
+    agregarCancion(p, f, "Tetoris", "Hiragi", "Letra1.txt", "Cancion1.wav");
+    agregarCancion(p, f, "Step Back", "GOT the beat", "Letra2.txt", "Cancion2.wav");
+    agregarCancion(p, f, "Check", "bbno$", "Letra3.txt", "Cancion3.wav");
+    agregarCancion(p, f, "Take Me to the Beach", "Imagine Dragons", "Letra4.txt", "Cancion4.wav");
+    agregarCancion(p, f, "Ilegal", "La Santa Grifa", "Letra5.txt", "Cancion5.wav");
+    agregarCancion(p, f, "IA Podcast", "AI Voices", "Letra6.txt", "Cancion6.wav");
+
+    Cancion* actual = p;
+    int op;
 
     do {
-        cout << "\n===== MENU DE CANCIONES =====\n";
-        cout << "1. Agregar cancion\n";
-        cout << "2. Eliminar cancion\n";
-        cout << "3. Buscar canciones por artista\n";
-        cout << "4. Agregar cancion a favoritos\n";
-        cout << "5. Mostrar favoritos\n";
-        cout << "0. Salir\n";
-        cout << "Seleccione una opcion: ";
-        cin >> opcion;
-        cin.ignore();
+        cout << "\n======= MENU C++IFY =======";
+        cout << "\nCancion actual: " << (actual ? actual->titulo : "Ninguna");
+        cout << "\n1. Play/Lyrics | 2. Pausa | 3. Siguiente | 4. Anterior";
+        cout << "\n5. ELIMINAR    | 6. Like  | 7. Favoritos | 8. Shuffle | 9. Ir a N | 0. Salir";
+        cout << "\nOpcion: ";
+        cin >> op;
 
-        switch (opcion) {
-
-        case 1:
-            cout << "Titulo: ";
-            getline(cin, titulo);
-            cout << "Artista: ";
-            getline(cin, artista);
-            cout << "Archivo de la letra: ";
-            getline(cin, archivo);
-
-            agregarCancion(p, f, titulo, artista, archivo);
-            cout << "Cancion agregada correctamente.\n";
-            break;
-
-        case 2:
-            cout << "Titulo de la cancion a eliminar: ";
-            getline(cin, titulo);
-            eliminarCancion(p, f, titulo);
-            break;
-
-        case 3:
-            cout << "Nombre del artista: ";
-            getline(cin, artista);
-            buscarXArtista(p, artista);
-            break;
-
-        case 4:
-            cout << "Titulo de la cancion a agregar a favoritos: ";
-            getline(cin, titulo);
-            agregarAFavoritos(p, titulo);
-            break;
-
-        case 5:
-            cout << "\n=== CANCIONES FAVORITAS ===\n";
-            mostrarFavoritos(p);
-            break;
-
-        case 0:
-            cout << "Saliendo del programa...\n";
-            break;
-
-        default:
-            cout << "Opcion invalida.\n";
+        switch(op) {
+            case 1: reproducir(actual); break;
+            case 2: PlaySound(NULL, 0, 0); cout << "\n[PAUSA]\n"; break;
+            case 3: if(actual) { actual = actual->sig; reproducir(actual); } break;
+            case 4: if(actual) { actual = actual->ant; reproducir(actual); } break;
+            case 5: eliminarActual(actual, p, f); if(actual) reproducir(actual); break;
+            case 6: if(actual) { actual->favorito = true; cout << "\nAgregada a 'Me gusta'.\n"; } break;
+            case 7: {
+                Cancion* aux = p; bool hay = false;
+                cout << "\n--- TUS LIBRERIAS: ME GUSTA ---\n";
+                if(p) { 
+                    do { 
+                        if(aux->favorito) { cout << "[?] " << aux->titulo << " - " << aux->artist << endl; hay = true; } 
+                        aux = aux->sig; 
+                    } while(aux != p); 
+                }
+                if(!hay) cout << "No tienes canciones marcadas como favoritas.\n"; 
+                break;
+            }
+            case 8: // Reproducción Aleatoria (Shuffle)
+                if(actual) {
+                    int saltos = rand() % 6 + 1;
+                    for(int i = 0; i < saltos; i++) actual = actual->sig;
+                    reproducir(actual);
+                }
+                break;
+            case 9: {
+                int pos;
+                cout << "\nIngresa el numero de la cancion: ";
+                cin >> pos;
+                Cancion* temp = actual;
+                irAPosicion(actual, p, pos);
+                if (actual != temp || pos == 1) reproducir(actual);
+                break;
+            }
         }
+    } while(op != 0);
 
-    } while (opcion != 0);
-    
+    PlaySound(NULL, 0, 0); // Detener todo al salir
     return 0;
 }
