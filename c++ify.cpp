@@ -19,7 +19,7 @@ struct Cancion {
 };
 
 // ======================================================
-// BLOQUE A: ESTRUCTURA CIRCULAR (Memoria Dinámica)
+// BLOQUE A: ESTRUCTURA CIRCULAR
 // ======================================================
 
 void agregarCancion(Cancion* &p, Cancion* &f, string t, string a, string al, string am) {
@@ -55,7 +55,7 @@ void eliminarActual(Cancion* &actual, Cancion* &p, Cancion* &f) {
         if (actual == f) f = actual->ant;
         actual = actual->sig; // Mover al siguiente tras borrar
     }
-    delete eliminar; // Liberación explícita de memoria
+    delete eliminar; 
     PlaySound(NULL, 0, 0); 
     cout << "\n[!] Cancion eliminada de tu biblioteca.\n";
 }
